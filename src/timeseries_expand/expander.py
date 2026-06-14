@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import pandas as pd
 
@@ -48,6 +48,11 @@ class FrequencyExpander:
         if how != "ffill":
             raise NotImplementedError(f"fill strategy {how!r} not implemented")
 
+        # cfg.source_freq/target_freq are narrowed to Frequency in __post_init__,
+        # but mypy doesn't track that. Cast explicitly.
+        target = cast(Frequency, cfg.target_freq)
+        source = cast(Frequency, cfg.source_freq)
+
         df = self._validate_input(df, time_col, value_col)
 
         start_ts = df[time_col].min()
@@ -55,18 +60,18 @@ class FrequencyExpander:
 
         # Build target index in UTC (DST-safe).
         if start_ts == end_ts:
-            periods = _default_window(cfg.target_freq)
+            periods = _default_window(target)
             idx_utc = pd.date_range(
                 start=start_ts,
                 periods=periods,
-                freq=cfg.target_freq.value,
+                freq=target.value,
                 tz="UTC",
             )
         else:
             idx_utc = pd.date_range(
                 start=start_ts,
                 end=end_ts,
-                freq=cfg.target_freq.value,
+                freq=target.value,
                 tz="UTC",
             )
 
@@ -83,7 +88,7 @@ class FrequencyExpander:
         )
 
         # Gap detection (UTC).
-        gap_flags = self._detect_gaps(df, cfg, time_col)
+        gap_flags = self._detect_gaps(df, source, time_col, cfg.gap_threshold_multiplier)
         gap_idx = pd.DatetimeIndex(gap_flags.index[gap_flags])
         if len(gap_idx) > 0:
             if gap_idx.tz is None:
@@ -109,23 +114,36 @@ class FrequencyExpander:
                 f"Input must contain columns {time_col!r} and {value_col!r}; got {list(df.columns)}"
             )
         out = df[[time_col, value_col]].copy()
-        out = out.dropna(subset=[time_col])
+        out = out.loc[out[time_col].notna()]
         out = out.drop_duplicates(subset=[time_col], keep="last")
         out[time_col] = pd.to_datetime(out[time_col], utc=True)
         out = out.sort_values(time_col).reset_index(drop=True)
         return out
 
     @staticmethod
-    def _detect_gaps(df: pd.DataFrame, cfg: ExpandConfig, time_col: str) -> pd.Series:
-        threshold_days = cfg.source_freq.expected_days * cfg.gap_threshold_multiplier
-        deltas = df[time_col].diff().dt.total_seconds() / 86400.0
-        flags = pd.Series(deltas.values > threshold_days, index=df[time_col].values)
+    def _detect_gaps(
+        df: pd.DataFrame,
+        source: Frequency,
+        time_col: str,
+        threshold_multiplier: float = 1.5,
+    ) -> pd.Series:
+        threshold_days = source.expected_days * threshold_multiplier
+        ts_series = df[time_col]
+        delta_seconds = ts_series.diff().dt.total_seconds()  # type: ignore[arg-type]
+        threshold_seconds = threshold_days * 86400.0
+        bool_list = []
+        for v in delta_seconds:
+            try:
+                bool_list.append(float(v) > threshold_seconds)
+            except (TypeError, ValueError):
+                bool_list.append(False)
+        flags = pd.Series(bool_list, index=df[time_col].values)
         return flags
 
 
 def _default_window(target: Frequency) -> int:
     """Default number of periods to expand a single-release series."""
-    return {
+    table = {
         Frequency.YEARLY: 2,
         Frequency.QUARTERLY: 4,
         Frequency.MONTHLY: 2,
@@ -133,4 +151,5 @@ def _default_window(target: Frequency) -> int:
         Frequency.WEEKLY: 7,
         Frequency.DAILY: 24,
         Frequency.HOURLY: 24,
-    }[target]
+    }
+    return table[target]
