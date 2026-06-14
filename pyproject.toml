@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "timeseries-expand"
-version = "0.1.0"
+version = "0.1.1"
 description = "Expand low-frequency time series (yearly/quarterly/monthly/weekly/daily) to higher frequencies with publication-aware forward fill."
 readme = "README.md"
 license = { text = "MIT" }
