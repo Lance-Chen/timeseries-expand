@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "timeseries-expand"
+version = "0.1.0"
+description = "Expand low-frequency time series (yearly/quarterly/monthly/weekly/daily) to higher frequencies with publication-aware forward fill."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Jiang" },
+]
+keywords = [
+    "time-series",
+    "resampling",
+    "forward-fill",
+    "commodity-pricing",
+    "coal-price",
+    "pandas",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Office/Business :: Financial",
+]
+
+dependencies = [
+    "pandas>=2.2.0",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+polars = ["polars>=0.20"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "pytest-benchmark>=4.0",
+    "hypothesis>=6.90",
+    "ruff>=0.3",
+    "mypy>=1.8",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.24",
+]
+
+[project.urls]
+Homepage = "https://github.com/Lance-Chen/timeseries-expand"
+Documentation = "https://Lance-Chen.github.io/timeseries-expand/"
+Repository = "https://github.com/Lance-Chen/timeseries-expand"
+Issues = "https://github.com/Lance-Chen/timeseries-expand/issues"
+Changelog = "https://github.com/Lance-Chen/timeseries-expand/blob/main/CHANGELOG.md"
+
+[project.scripts]
+ts-expand = "timeseries_expand.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+write_to = "src/timeseries_expand/_version.py"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow",
+    "property: marks property-based tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/timeseries_expand"]
+omit = ["*/tests/*", "*/_version.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    'if __name__ == "__main__":'
+]
