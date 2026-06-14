@@ -137,7 +137,10 @@ class FrequencyExpander:
                 bool_list.append(float(v) > threshold_seconds)
             except (TypeError, ValueError):
                 bool_list.append(False)
-        flags = pd.Series(bool_list, index=df[time_col].values)
+        # Build the index explicitly as a list — mypy rejects df[col].values
+        # because its inferred type is Union[ExtensionArray, ndarray].
+        index_values = [df[time_col].iloc[i] for i in range(len(bool_list))]
+        flags = pd.Series(bool_list, index=index_values)
         return flags
 
 
