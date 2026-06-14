@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Expand low-frequency time series (yearly/quarterly/monthly/weekly/daily) to higher frequencies with publication-aware forward fill."
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Lance-Chen" },
 ]
@@ -26,8 +26,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -47,7 +46,7 @@ dev = [
     "pytest-benchmark>=4.0",
     "hypothesis>=6.90",
     "ruff>=0.3",
-    "mypy>=1.10,<1.14",
+    "mypy>=1.10,<2",
     "pandas-stubs>=2.2",
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",
@@ -86,7 +85,7 @@ ignore = ["E501"]
 "tests/*" = ["B011"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 ignore_missing_imports = true
 warn_unused_ignores = false
 disallow_untyped_defs = false

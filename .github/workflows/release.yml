@@ -13,8 +13,6 @@ jobs:
   release:
     name: Release to PyPI
     runs-on: ubuntu-latest
-    environment:
-      url: https://pypi.org/p/timeseries-expand
     steps:
       - uses: actions/checkout@v4
         with:
