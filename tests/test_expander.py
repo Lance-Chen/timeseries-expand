@@ -130,9 +130,7 @@ def test_t09_cross_year(expander, cfg_weekly_to_hourly):
 def test_t15_nat_timestamp_dropped(expander, cfg_weekly_to_hourly):
     df = pd.DataFrame(
         {
-            "timestamp": pd.to_datetime(
-                ["2024-01-01", None, "2024-01-08"], utc=True
-            ),
+            "timestamp": pd.to_datetime(["2024-01-01", None, "2024-01-08"], utc=True),
             "value": [100.0, 200.0, 101.0],
         }
     )
@@ -149,9 +147,7 @@ def test_t15_nat_timestamp_dropped(expander, cfg_weekly_to_hourly):
 def test_t14_duplicate_timestamps(expander, cfg_weekly_to_hourly):
     df = pd.DataFrame(
         {
-            "timestamp": pd.to_datetime(
-                ["2024-01-01", "2024-01-01", "2024-01-08"], utc=True
-            ),
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-01", "2024-01-08"], utc=True),
             "value": [100.0, 999.0, 101.0],
         }
     )

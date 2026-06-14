@@ -75,10 +75,12 @@ def test_t06_extreme_gap_does_not_crash(expander, cfg_weekly_to_hourly):
 
 # ----------------- T10: cross month (D target) -----------------
 def test_t10_cross_month_boundary_daily(expander):
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-30", "2024-02-05"]),
-        "value": [100.0, 200.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-30", "2024-02-05"]),
+            "value": [100.0, 200.0],
+        }
+    )
     cfg = ExpandConfig(source_freq=Frequency.WEEKLY, target_freq=Frequency.DAILY)
     result = expander.expand(df, cfg)
 
@@ -93,10 +95,12 @@ def test_t10_cross_month_boundary_daily(expander):
 # ----------------- T11: DST spring forward (US Eastern) -----------------
 def test_t11_dst_spring_forward_safe_in_utc(expander):
     """DST handling: as long as we work in UTC, no rows are lost or duplicated."""
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-03-08", "2024-03-15"]),  # US DST
-        "value": [100.0, 101.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-03-08", "2024-03-15"]),  # US DST
+            "value": [100.0, 101.0],
+        }
+    )
     cfg = ExpandConfig(
         source_freq=Frequency.WEEKLY,
         target_freq=Frequency.HOURLY,
@@ -112,10 +116,12 @@ def test_t11_dst_spring_forward_safe_in_utc(expander):
 
 # ----------------- T12: DST fall back (US Eastern) -----------------
 def test_t12_dst_fall_back_safe_in_utc(expander):
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-11-01", "2024-11-08"]),
-        "value": [100.0, 101.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-11-01", "2024-11-08"]),
+            "value": [100.0, 101.0],
+        }
+    )
     cfg = ExpandConfig(
         source_freq=Frequency.WEEKLY,
         target_freq=Frequency.HOURLY,
@@ -131,12 +137,14 @@ def test_t12_dst_fall_back_safe_in_utc(expander):
 # ----------------- T13: holiday shift to non-Monday publication -----------------
 def test_t13_publication_on_wednesday(expander, cfg_weekly_to_hourly):
     """Real-world: weekly release published on Wednesday due to Monday holiday."""
-    releases = pd.to_datetime([
-        "2024-01-01",  # Mon
-        "2024-01-10",  # Wed (delayed from Jan 8 Mon)
-        "2024-01-15",  # Mon
-        "2024-01-22",  # Mon
-    ])
+    releases = pd.to_datetime(
+        [
+            "2024-01-01",  # Mon
+            "2024-01-10",  # Wed (delayed from Jan 8 Mon)
+            "2024-01-15",  # Mon
+            "2024-01-22",  # Mon
+        ]
+    )
     df = pd.DataFrame({"timestamp": releases, "value": [100.0, 101.0, 102.0, 103.0]})
 
     result = expander.expand(df, cfg_weekly_to_hourly)
@@ -148,10 +156,12 @@ def test_t13_publication_on_wednesday(expander, cfg_weekly_to_hourly):
 # ----------------- T16: NaN value (defensive behavior) -----------------
 def test_t16_nan_value_in_source(expander, cfg_weekly_to_hourly):
     """If a source value is NaN, ffill will propagate the previous non-NaN value."""
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
-        "value": [100.0, float("nan"), 102.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
+            "value": [100.0, float("nan"), 102.0],
+        }
+    )
     cfg = ExpandConfig(source_freq=Frequency.WEEKLY, target_freq=Frequency.HOURLY)
     result = expander.expand(df, cfg)
 
@@ -163,10 +173,12 @@ def test_t16_nan_value_in_source(expander, cfg_weekly_to_hourly):
 
 # ----------------- T17: negative / extreme value -----------------
 def test_t17_extreme_values_preserved(expander, cfg_weekly_to_hourly):
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08"]),
-        "value": [-100.5, 0.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08"]),
+            "value": [-100.5, 0.0],
+        }
+    )
     cfg = ExpandConfig(source_freq=Frequency.WEEKLY, target_freq=Frequency.HOURLY)
     result = expander.expand(df, cfg)
 
@@ -184,10 +196,12 @@ def test_t18_empty_input_raises(expander, cfg_weekly_to_hourly):
 
 # ----------------- T19: monthly frequency crossing year boundary -----------------
 def test_t19_monthly_across_year_boundary(expander):
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2023-11-30", "2023-12-31", "2024-01-31"]),
-        "value": [100.0, 200.0, 300.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2023-11-30", "2023-12-31", "2024-01-31"]),
+            "value": [100.0, 200.0, 300.0],
+        }
+    )
     cfg = ExpandConfig(source_freq=Frequency.MONTHLY, target_freq=Frequency.DAILY)
     result = expander.expand(df, cfg)
 
@@ -200,11 +214,15 @@ def test_t19_monthly_across_year_boundary(expander):
 # ----------------- Bonus: gap_threshold_multiplier configuration -----------------
 def test_gap_threshold_multiplier_configurable(expander):
     """A multiplier of 2.0 should only flag gaps exceeding 2x expected cadence."""
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-22"]),  # 14-day gap
-        "value": [100.0, 101.0, 102.0],
-    })
-    cfg_default = ExpandConfig(source_freq=Frequency.WEEKLY, target_freq=Frequency.HOURLY)  # 1.5x = 10.5
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-22"]),  # 14-day gap
+            "value": [100.0, 101.0, 102.0],
+        }
+    )
+    cfg_default = ExpandConfig(
+        source_freq=Frequency.WEEKLY, target_freq=Frequency.HOURLY
+    )  # 1.5x = 10.5
     cfg_strict = ExpandConfig(
         source_freq=Frequency.WEEKLY, target_freq=Frequency.HOURLY, gap_threshold_multiplier=2.0
     )  # 2.0x = 14.0
@@ -222,10 +240,12 @@ def test_gap_threshold_multiplier_configurable(expander):
 
 # ----------------- Bonus: timezone parameter is respected -----------------
 def test_timezone_parameter_respected(expander):
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08"]),
-        "value": [100.0, 101.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08"]),
+            "value": [100.0, 101.0],
+        }
+    )
     cfg = ExpandConfig(
         source_freq=Frequency.WEEKLY,
         target_freq=Frequency.HOURLY,

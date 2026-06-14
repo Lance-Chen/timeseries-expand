@@ -57,13 +57,17 @@ class FrequencyExpander:
         if start_ts == end_ts:
             periods = _default_window(cfg.target_freq)
             idx_utc = pd.date_range(
-                start=start_ts, periods=periods,
-                freq=cfg.target_freq.value, tz="UTC",
+                start=start_ts,
+                periods=periods,
+                freq=cfg.target_freq.value,
+                tz="UTC",
             )
         else:
             idx_utc = pd.date_range(
-                start=start_ts, end=end_ts,
-                freq=cfg.target_freq.value, tz="UTC",
+                start=start_ts,
+                end=end_ts,
+                freq=cfg.target_freq.value,
+                tz="UTC",
             )
 
         # Ensure every source timestamp is represented in the target index.
@@ -99,13 +103,10 @@ class FrequencyExpander:
         return result
 
     @staticmethod
-    def _validate_input(
-        df: pd.DataFrame, time_col: str, value_col: str
-    ) -> pd.DataFrame:
+    def _validate_input(df: pd.DataFrame, time_col: str, value_col: str) -> pd.DataFrame:
         if time_col not in df.columns or value_col not in df.columns:
             raise KeyError(
-                f"Input must contain columns {time_col!r} and {value_col!r}; "
-                f"got {list(df.columns)}"
+                f"Input must contain columns {time_col!r} and {value_col!r}; got {list(df.columns)}"
             )
         out = df[[time_col, value_col]].copy()
         out = out.dropna(subset=[time_col])
@@ -115,9 +116,7 @@ class FrequencyExpander:
         return out
 
     @staticmethod
-    def _detect_gaps(
-        df: pd.DataFrame, cfg: ExpandConfig, time_col: str
-    ) -> pd.Series:
+    def _detect_gaps(df: pd.DataFrame, cfg: ExpandConfig, time_col: str) -> pd.Series:
         threshold_days = cfg.source_freq.expected_days * cfg.gap_threshold_multiplier
         deltas = df[time_col].diff().dt.total_seconds() / 86400.0
         flags = pd.Series(deltas.values > threshold_days, index=df[time_col].values)

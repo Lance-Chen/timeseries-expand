@@ -5,10 +5,9 @@ from __future__ import annotations
 import inspect
 
 import pandas as pd
-import pytest
 
 import timeseries_expand
-from timeseries_expand import ExpandConfig, FrequencyExpander, Frequency, expand
+from timeseries_expand import ExpandConfig, Frequency, FrequencyExpander, expand
 
 
 def test_public_api_exports():
@@ -22,10 +21,12 @@ def test_public_api_exports():
 
 def test_functional_api_basic():
     """expand() works with string frequency aliases."""
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
-        "value": [100.0, 101.0, 102.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
+            "value": [100.0, 101.0, 102.0],
+        }
+    )
     result = expand(df, "W-MON", "h")
     assert "timestamp" in result.columns
     assert "value" in result.columns
@@ -35,10 +36,12 @@ def test_functional_api_basic():
 
 def test_functional_api_matches_class_api():
     """The functional API must produce identical output to the class API."""
-    df = pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
-        "value": [100.0, 101.0, 102.0],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
+            "value": [100.0, 101.0, 102.0],
+        }
+    )
 
     result_func = expand(df, "W-MON", "h")
 
@@ -52,12 +55,16 @@ def test_functional_api_matches_class_api():
 
 def test_functional_api_passes_kwargs():
     """timezone, gap_threshold_multiplier, time_col, value_col all work."""
-    df = pd.DataFrame({
-        "ts": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
-        "price": [100.0, 101.0, 102.0],
-    })
+    df = pd.DataFrame(
+        {
+            "ts": pd.to_datetime(["2024-01-01", "2024-01-08", "2024-01-15"]),
+            "price": [100.0, 101.0, 102.0],
+        }
+    )
     result = expand(
-        df, "W-MON", "h",
+        df,
+        "W-MON",
+        "h",
         timezone="Asia/Shanghai",
         gap_threshold_multiplier=2.0,
         time_col="ts",

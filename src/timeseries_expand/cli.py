@@ -31,12 +31,8 @@ def main() -> None:
         help="Target frequency.",
     )
     parser.add_argument("--timezone", default="UTC")
-    parser.add_argument(
-        "--time-col", default="timestamp", help="Timestamp column name"
-    )
-    parser.add_argument(
-        "--value-col", default="value", help="Value column name"
-    )
+    parser.add_argument("--time-col", default="timestamp", help="Timestamp column name")
+    parser.add_argument("--value-col", default="value", help="Value column name")
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)
@@ -45,9 +41,7 @@ def main() -> None:
         target_freq=args.target_freq,
         timezone=args.timezone,
     )
-    result = FrequencyExpander().expand(
-        df, cfg, time_col=args.time_col, value_col=args.value_col
-    )
+    result = FrequencyExpander().expand(df, cfg, time_col=args.time_col, value_col=args.value_col)
     result.to_csv(args.output, index=False)
     print(f"Wrote {len(result)} rows to {args.output}")
 

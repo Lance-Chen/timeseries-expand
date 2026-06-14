@@ -38,6 +38,5 @@ class Frequency(str, Enum):
             return cls(value)
         except ValueError as exc:
             raise ValueError(
-                f"Unknown frequency: {value!r}. "
-                f"Supported: {[f.value for f in cls]}"
+                f"Unknown frequency: {value!r}. Supported: {[f.value for f in cls]}"
             ) from exc
