@@ -47,7 +47,7 @@ dev = [
     "pytest-benchmark>=4.0",
     "hypothesis>=6.90",
     "ruff>=0.3",
-    "mypy>=1.10",
+    "mypy>=1.10,<1.14",
     "pandas-stubs>=2.2",
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",
@@ -86,7 +86,7 @@ ignore = ["E501"]
 "tests/*" = ["B011"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 ignore_missing_imports = true
 warn_unused_ignores = false
 disallow_untyped_defs = false

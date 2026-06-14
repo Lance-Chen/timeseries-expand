@@ -115,10 +115,10 @@ class FrequencyExpander:
             )
         out = df[[time_col, value_col]].copy()
         out = out.loc[out[time_col].notna()]
-        out = out.drop_duplicates(subset=[time_col], keep="last")
+        out = out.drop_duplicates(subset=[time_col], keep="last")  # type: ignore[call-overload]
         out[time_col] = pd.to_datetime(out[time_col], utc=True)
-        out = out.sort_values(time_col).reset_index(drop=True)
-        return out
+        out = out.sort_values(time_col).reset_index(drop=True)  # type: ignore[call-overload]
+        return out  # type: ignore[return-value]
 
     @staticmethod
     def _detect_gaps(
