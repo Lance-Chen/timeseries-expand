@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
 
-from timeseries_expand import ExpandConfig, FrequencyExpander
+from timeseries_expand import ExpandConfig, FrequencyExpander, __version__
 from timeseries_expand.frequencies import Frequency
 
 
@@ -16,24 +17,34 @@ def main() -> None:
         prog="ts-expand",
         description="Expand a low-frequency time series to a higher frequency.",
     )
-    parser.add_argument("input", type=Path, help="Input CSV file with [timestamp,value] columns")
-    parser.add_argument("output", type=Path, help="Output CSV path")
+    parser.add_argument("--version", action="version", version=f"ts-expand {__version__}")
+    parser.add_argument(
+        "input", nargs="?", type=Path, help="Input CSV file with [timestamp,value] columns"
+    )
+    parser.add_argument("output", nargs="?", type=Path, help="Output CSV path")
     parser.add_argument(
         "--source-freq",
         type=Frequency.parse,
-        required=True,
+        required=False,
         help=f"Source frequency. One of: {[f.value for f in Frequency]}",
     )
     parser.add_argument(
         "--target-freq",
         type=Frequency.parse,
-        required=True,
+        required=False,
         help="Target frequency.",
     )
     parser.add_argument("--timezone", default="UTC")
     parser.add_argument("--time-col", default="timestamp", help="Timestamp column name")
     parser.add_argument("--value-col", default="value", help="Value column name")
     args = parser.parse_args()
+
+    # --version is handled by argparse automatically
+    if not args.input or not args.output:
+        if len(sys.argv) <= 1:
+            parser.print_help()
+            return
+        parser.error("input and output files are required")
 
     df = pd.read_csv(args.input)
     cfg = ExpandConfig(
