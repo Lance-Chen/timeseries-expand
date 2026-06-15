@@ -20,6 +20,9 @@ def expand(
     gap_threshold_multiplier: float = 1.5,
     time_col: str = "timestamp",
     value_col: str = "value",
+    date_format: str | None = None,
+    start: str | pd.Timestamp | None = None,
+    end: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     """Expand a low-frequency time series to a higher frequency.
 
@@ -53,5 +56,8 @@ def expand(
         target_freq=target_freq,
         timezone=timezone,
         gap_threshold_multiplier=gap_threshold_multiplier,
+        date_format=date_format,
+        start=start,
+        end=end,
     )
     return FrequencyExpander().expand(df, cfg, time_col=time_col, value_col=value_col)

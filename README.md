@@ -74,8 +74,79 @@ print(result.head())
 - **Gap detection** - flags intervals exceeding 1.5x expected cadence with `gap_flag` column
 - **DST-safe** - internal UTC, configurable display timezone
 - **21 frequency combinations** - expand yearly/quarterly/monthly/weekly/daily data
-- **122 tests** - pytest + Hypothesis property-based tests
+- **173 tests** - pytest + Hypothesis property-based tests
 - **3 call patterns** - functional API, class-based API, CLI
+
+
+
+### Custom output date format
+
+Pass `date_format` to format output timestamps as strings using any
+[pandas strftime pattern](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes):
+
+```python
+# Functional API
+result = expand(df, "W-MON", "h", date_format="%Y-%m-%d %H:%M")
+# Result: "2024-01-01 00:00"
+
+result = expand(df, "ME", "D", date_format="%Y-%m")
+# Result: "2024-01" (year-month only)
+
+result = expand(df, "W-MON", "D", date_format="%Y W%W")
+# Result: "2024 W01" (ISO week)
+```
+
+CLI:
+
+```bash
+ts-expand in.csv out.csv --source-freq W-MON --target-freq h \
+    --date-format "%Y-%m-%d"
+```
+
+**Common placeholders** (pandas supports a subset of strftime):
+| code | meaning | example |
+|------|---------|---------|
+| `%Y` | 4-digit year | 2024 |
+| `%m` | month (01-12) | 01 |
+| `%d` | day of month (01-31) | 15 |
+| `%H:%M` | hour:minute | 09:30 |
+| `%a` | weekday abbr | Mon |
+| `%b` | month abbr | Jan |
+| `%j` | day of year (001-366) | 035 |
+| `%W` | ISO week number (00-53) | 05 |
+| `%z` | UTC offset | +0800 |
+
+Omit `date_format` (default `None`) to keep output as `Timestamp` objects.
+
+
+### Custom output time range
+
+Clip the output to a subset of the input range with `start` / `end`:
+
+```python
+# Functional API
+result = expand(df, "W-MON", "h", start="2024-03-01", end="2024-06-30")
+# Output: 2024-03-01 to 2024-06-30 (clipped, no extrapolation)
+
+result = expand(df, "W-MON", "h", start="2024-12-01")
+# Only start: goes from 2024-12-01 to the input's last date
+```
+
+CLI:
+
+```bash
+ts-expand in.csv out.csv --source-freq W-MON --target-freq h \
+    --start 2024-03-01 --end 2024-06-30
+```
+
+**Rules**:
+- `start` / `end` must lie **within** the input data range; otherwise `ValueError`.
+- `start > end` raises `ValueError` at config construction.
+- Accepts ISO date strings, `pd.Timestamp`, or `datetime.date`. Naive values are assumed UTC.
+- Combine with `date_format` for formatted output: `expand(df, "W-MON", "h", start="...", date_format="%Y-%m-%d")`.
+
+
+
 
 ### CLI
 
@@ -146,8 +217,35 @@ print(result.head())
 - **间隙检测** - 默认 1.5 倍期望周期以上的间隔自动标记 `gap_flag`
 - **DST 安全** - 内部 UTC，可配置显示时区
 - **21 种频率组合** - 年级/季度/月度/半月/周度/日度数据任意扩充
-- **122 个测试** - pytest + Hypothesis 属性测试
+- **173 个测试** - pytest + Hypothesis 属性测试
 - **3 种调用方式** - 函数式 API、类 API、CLI
+
+
+
+### 自定义输出时间范围
+
+使用 `start` / `end` 把输出裁剪到输入的子区间：
+
+```python
+result = expand(df, "W-MON", "h", start="2024-03-01", end="2024-06-30")
+# 输出：2024-03-01 到 2024-06-30（裁剪，不外推）
+
+result = expand(df, "W-MON", "h", start="2024-12-01")
+# 只给 start：从 2024-12-01 到输入的最后一个日期
+```
+
+CLI：
+
+```bash
+ts-expand in.csv out.csv --source-freq W-MON --target-freq h \
+    --start 2024-03-01 --end 2024-06-30
+```
+
+**规则**：
+- `start` / `end` 必须落在**输入数据范围内**，否则抛 `ValueError`。
+- `start > end` 在配置构造时就抛 `ValueError`。
+- 接受 ISO 日期字符串、`pd.Timestamp` 或 `datetime.date`，naive 值假定为 UTC。
+- 可与 `date_format` 组合：`expand(df, "W-MON", "h", start="...", date_format="%Y-%m-%d")`。
 
 ### 命令行
 

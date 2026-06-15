@@ -35,6 +35,23 @@ def main() -> None:
         help="Target frequency.",
     )
     parser.add_argument("--timezone", default="UTC")
+    parser.add_argument(
+        "--start",
+        default=None,
+        help="Optional lower bound for output timestamps (e.g. '2024-03-01'). "
+        "Must lie within the input data range.",
+    )
+    parser.add_argument(
+        "--end",
+        default=None,
+        help="Optional upper bound for output timestamps. Must lie within input.",
+    )
+    parser.add_argument(
+        "--date-format",
+        default=None,
+        help="Optional strftime pattern for output timestamps (e.g. '%%Y-%%m-%%d %%H:%%M'). "
+        "If omitted, timestamps are written as ISO 8601 strings by pandas.",
+    )
     parser.add_argument("--time-col", default="timestamp", help="Timestamp column name")
     parser.add_argument("--value-col", default="value", help="Value column name")
     args = parser.parse_args()
@@ -51,6 +68,9 @@ def main() -> None:
         source_freq=args.source_freq,
         target_freq=args.target_freq,
         timezone=args.timezone,
+        date_format=args.date_format,
+        start=args.start,
+        end=args.end,
     )
     result = FrequencyExpander().expand(df, cfg, time_col=args.time_col, value_col=args.value_col)
     result.to_csv(args.output, index=False)

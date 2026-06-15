@@ -20,10 +20,35 @@ class ExpandConfig:
     """Timezone of the resulting timestamps. Internally we work in UTC."""
     gap_threshold_multiplier: float = 1.5
     """Multiples of `expected_days` above which a gap is flagged."""
+    date_format: str | None = None
+    """If set, format output timestamps as strings using this strftime pattern.
+    None (default) keeps timestamps as pandas Timestamp objects (backward compatible)."""
+    start: str | pd.Timestamp | None = None
+    """Optional lower bound for output timestamps. Accepts ISO strings or any
+    value pd.Timestamp() can parse. Must lie within input data range.
+    None (default) uses input data's first timestamp."""
+    end: str | pd.Timestamp | None = None
+    """Optional upper bound for output timestamps. Same rules as start.
+    None (default) uses input data's last timestamp."""
 
     def __post_init__(self) -> None:
         self.source_freq = Frequency.parse(self.source_freq)
         self.target_freq = Frequency.parse(self.target_freq)
+        # Parse start/end to UTC Timestamp. Use local variables for mypy.
+        start_raw = self.start
+        end_raw = self.end
+        if start_raw is not None:
+            start_ts = pd.Timestamp(start_raw)  # type: ignore[arg-type]
+            if start_ts.tz is None:
+                start_ts = start_ts.tz_localize("UTC")
+            self.start = start_ts
+        if end_raw is not None:
+            end_ts = pd.Timestamp(end_raw)  # type: ignore[arg-type]
+            if end_ts.tz is None:
+                end_ts = end_ts.tz_localize("UTC")
+            self.end = end_ts
+        if self.start is not None and self.end is not None and self.start > self.end:  # type: ignore[operator]
+            raise ValueError(f"start ({self.start}) must be <= end ({self.end})")
 
 
 class FrequencyExpander:
@@ -31,10 +56,10 @@ class FrequencyExpander:
 
     Expands a sparse low-frequency series into a dense high-frequency series
     by carrying each published value forward until the next publication
-    (publication-aware forward fill, semantics `[T, T_next)`).
+    (publication-aware forward fill, semantics [T, T_next)).
 
     Internally all timestamps are normalized to UTC for deterministic DST
-    handling; the result is converted to `cfg.timezone` on output.
+    handling; the result is converted to cfg.timezone on output.
     """
 
     def expand(
@@ -48,8 +73,6 @@ class FrequencyExpander:
         if how != "ffill":
             raise NotImplementedError(f"fill strategy {how!r} not implemented")
 
-        # cfg.source_freq/target_freq are narrowed to Frequency in __post_init__,
-        # but mypy doesn't track that. Cast explicitly.
         target = cast(Frequency, cfg.target_freq)
         source = cast(Frequency, cfg.source_freq)
 
@@ -58,25 +81,51 @@ class FrequencyExpander:
         start_ts = df[time_col].min()
         end_ts = df[time_col].max()
 
+        # Determine output range. User-supplied start/end override the
+        # input data boundaries, but must lie within them.
+        input_min = start_ts
+        input_max = end_ts
+
+        if cfg.start is not None:
+            if cfg.start < input_min:
+                raise ValueError(f"start ({cfg.start}) is before input range ({input_min})")
+            output_start = cfg.start
+        else:
+            output_start = input_min
+
+        if cfg.end is not None:
+            if cfg.end > input_max:
+                raise ValueError(f"end ({cfg.end}) is after input range ({input_max})")
+            output_end = cfg.end
+        else:
+            output_end = input_max
+
         # Build target index in UTC (DST-safe).
-        if start_ts == end_ts:
+        if output_start == output_end:
             periods = _default_window(target)
             idx_utc = pd.date_range(
-                start=start_ts,
+                start=output_start,
                 periods=periods,
                 freq=target.value,
                 tz="UTC",
             )
         else:
             idx_utc = pd.date_range(
-                start=start_ts,
-                end=end_ts,
+                start=output_start,
+                end=output_end,
                 freq=target.value,
                 tz="UTC",
             )
 
-        # Ensure every source timestamp is represented in the target index.
+        # Ensure source timestamps within the output range are in the index.
         source_idx = pd.DatetimeIndex(df[time_col].unique())
+        if cfg.start is not None or cfg.end is not None:
+            mask = pd.Series(True, index=source_idx)  # type: ignore[var-annotated,assignment]
+            if cfg.start is not None:
+                mask &= source_idx >= cfg.start  # type: ignore[operator,assignment]
+            if cfg.end is not None:
+                mask &= source_idx <= cfg.end  # type: ignore[operator,assignment]
+            source_idx = source_idx[mask]  # type: ignore[arg-type]
         idx_utc = idx_utc.union(source_idx).sort_values()
 
         result = (
@@ -105,6 +154,10 @@ class FrequencyExpander:
         if cfg.timezone != "UTC":
             result[time_col] = result[time_col].dt.tz_convert(cfg.timezone)
 
+        # Optionally format as string using strftime.
+        if cfg.date_format is not None:
+            result[time_col] = result[time_col].dt.strftime(cfg.date_format)
+
         return result
 
     @staticmethod
@@ -131,14 +184,12 @@ class FrequencyExpander:
         ts_series = df[time_col]
         delta_seconds = ts_series.diff().dt.total_seconds()  # type: ignore[arg-type]
         threshold_seconds = threshold_days * 86400.0
-        bool_list = []
+        bool_list: list[bool] = []
         for v in delta_seconds:
             try:
                 bool_list.append(float(v) > threshold_seconds)
             except (TypeError, ValueError):
                 bool_list.append(False)
-        # Build the index explicitly as a list — mypy rejects df[col].values
-        # because its inferred type is Union[ExtensionArray, ndarray].
         index_values = [df[time_col].iloc[i] for i in range(len(bool_list))]
         flags = pd.Series(bool_list, index=index_values)
         return flags
