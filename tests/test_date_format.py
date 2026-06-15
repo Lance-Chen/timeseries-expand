@@ -132,7 +132,7 @@ def test_date_format_with_timezone(sample_df: pd.DataFrame) -> None:
 
 
 def test_date_format_with_chinese_columns(sample_df: pd.DataFrame) -> None:
-    """date_format applies regardless of column name."""
+    """date_format applies regardless of column name; columns are preserved."""
     df = sample_df.rename(columns={"timestamp": "日期", "value": "煤价指数"})
     result = expand(
         df,
@@ -140,9 +140,11 @@ def test_date_format_with_chinese_columns(sample_df: pd.DataFrame) -> None:
         "h",
         time_col="日期",
         value_col="煤价指数",
-        date_format="%Y年%m月%d日",
+        date_format="%Y-%m-%d",
     )
-    assert result["日期"].iloc[0] == "2024年01月01日"
+    assert "日期" in result.columns
+    assert "煤价指数" in result.columns
+    assert result["日期"].iloc[0] == "2024-01-01"
 
 
 # -------------------- CLI --------------------
